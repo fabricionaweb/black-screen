@@ -1,5 +1,5 @@
 import * as Path from "path";
-import {Suggestion, styles} from "./Common";
+import {Suggestion, styles} from "../autocompletion_utils/Common";
 import {exists, readFile, mapObject} from "../../utils/Common";
 import {PluginManager} from "../../PluginManager";
 
@@ -228,7 +228,9 @@ PluginManager.registerAutocompletionProvider("npm", async (context) => {
                 return [];
             }
         } else {
-            throw "Has no first argument.";
+            // TODO: handle npm sub commands other than "run" that can be
+            // further auto-completed
+            return [];
         }
     } else {
         return [];

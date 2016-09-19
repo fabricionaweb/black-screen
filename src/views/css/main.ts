@@ -77,6 +77,16 @@ const applicationGrid = {
     },
 };
 
+const sessionGrid = {
+    container: {
+        display: "grid",
+        gridTemplateAreas: "'all'",
+    },
+    child: {
+        gridArea: "all",
+    },
+};
+
 function sessionsGridTemplate(list: PaneList): CSSObject {
     if (list instanceof ColumnList) {
         return {
@@ -132,8 +142,12 @@ export const application = Object.assign(
     }
 );
 
-export const jobs = (isSessionFocused: boolean): CSSObject =>
-    isSessionFocused ? {} : unfocusedJobs;
+export const jobs = (isSessionFocused: boolean): CSSObject => Object.assign(
+    {},
+    sessionGrid.child,
+    isSessionFocused ? {} : unfocusedJobs,
+);
+
 
 export const row = (jobStatus: Status, activeScreenBufferType: ScreenBufferType) => {
     const style: CSSObject = {
@@ -239,7 +253,7 @@ export const statusBar = {
         float: "right",
         marginRight: 10,
     },
-    icon: Object.assign({}, icon, {marginRight: 5}),
+    icon: Object.assign({}, icon, {marginRight: 5, marginLeft: 5}),
     status: (status: VcsStatus) => {
         return {
             color: status === "dirty" ? colors.blue : colors.white,
@@ -269,20 +283,18 @@ export const session = (isFocused: boolean) => {
         styles.margin = "0 1px 0 0";
     }
 
-    return styles;
+    return Object.assign(styles, sessionGrid.container);
 };
 
-export const sessionShutter = (isFocused: boolean) => ({
-    backgroundColor: colors.white,
-    zIndex: 1,
-    opacity: isFocused ? 0 : 0.2,
-    pointerEvents: "none",
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-});
+export const sessionShutter = (isFocused: boolean) => Object.assign(
+    {
+        backgroundColor: colors.white,
+        zIndex: 1,
+        opacity: isFocused ? 0 : 0.2,
+        pointerEvents: "none",
+    },
+    sessionGrid.child,
+);
 
 export const titleBar = {
     WebkitAppRegion: "drag",
@@ -295,6 +307,9 @@ export const tabs = {
     WebkitMarginAfter: 0,
     WebkitPaddingStart: 0,
     WebkitUserSelect: "none",
+    listStyle: "none",
+    paddingLeft: 68,
+    paddingRight: 129,
 };
 
 const searchInputHeight = titleBarHeight - 6;
@@ -332,7 +347,7 @@ export const tab = (isHovered: boolean, isFocused: boolean) => {
         opacity: (isHovered || isFocused) ? 1 : 0.3,
         position: "relative",
         height: titleBarHeight,
-        width: 150,
+        flex: "auto",
         display: "inline-block",
         textAlign: "center",
         paddingTop: 2,

@@ -7,7 +7,7 @@ import {History} from "../shell/History";
 import {stopBubblingUp, getCaretPosition, setCaretPosition} from "./ViewUtils";
 import {Prompt} from "../shell/Prompt";
 import {Job} from "../shell/Job";
-import {Suggestion} from "../plugins/autocompletion_providers/Common";
+import {Suggestion} from "../plugins/autocompletion_utils/Common";
 import {KeyCode} from "../Enums";
 import {getSuggestions} from "../Autocompletion";
 import * as css from "./css/main";
@@ -131,7 +131,7 @@ export class PromptComponent extends React.Component<Props, State> {
         }
 
         return (
-            <div className="prompt-placeholder" ref="placeholder" id={this.props.job.id} style={css.promptPlaceholder}>
+            <div className="prompt-placeholder" ref="placeholder" id={this.props.job.id.toString()} style={css.promptPlaceholder}>
                 <div className="prompt-wrapper" style={css.promptWrapper(this.props.status, this.state.isSticky)}>
                     <div style={css.arrow(this.props.status)}>
                         <div style={css.arrowInner(this.props.status)}></div>
@@ -293,7 +293,7 @@ export class PromptComponent extends React.Component<Props, State> {
     }
 
     private async handleInput(event: React.SyntheticEvent<HTMLElement>): Promise<void> {
-        this.prompt.setValue(event.target.innerText);
+        this.prompt.setValue((event.target as HTMLElement).innerText);
 
         await this.getSuggestions();
     }
