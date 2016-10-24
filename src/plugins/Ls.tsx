@@ -1,24 +1,21 @@
-import * as React from "React";
+import * as React from "react";
 import {PluginManager} from "../PluginManager";
-import {Job} from "../shell/Job";
 import {join, isAbsolute} from "path";
 import {dirStat} from "dirStat";
-import * as e from "electron";
 import {CSSObject} from "../views/css/definitions";
 import {isEqual} from "lodash";
 import {colors} from "../views/css/colors";
+import Link from "../utils/Link";
 
 type Props = {
-    path: string,
+    files: any[],
 }
 
 type State = {
-    success: boolean | undefined,
-    dirStat: any,
     itemWidth: number | undefined,
 }
 
-const renderFile = (file: any, itemWidth = 0) => {
+const renderFile = (file: any, itemWidth = 0, key: number) => {
     const style: CSSObject = {display: "inline-block"};
     if (itemWidth) {
         // TODO: respect LSCOLORS env var
@@ -26,13 +23,10 @@ const renderFile = (file: any, itemWidth = 0) => {
         style.cursor = "pointer";
         style.margin = "2px 4px";
     }
-    return <span
-        style={style}
-        onClick={() => e.shell.openExternal(`file://${file.filePath}`)}
-        className="underlineOnHover">
+    return <Link key={key} absolutePath={file.filePath} style={style}>
         <span style={{color: file.isDirectory() ? colors.blue : colors.white}}>{file.fileName}</span>
         <span>{file.isDirectory() ? "/" : ""}</span>
-    </span>;
+    </Link>;
 };
 
 class LSComponent extends React.Component<Props, State> {
@@ -40,21 +34,8 @@ class LSComponent extends React.Component<Props, State> {
         super(props);
 
         this.state = {
-            dirStat: undefined,
-            success: undefined,
             itemWidth: undefined,
         };
-
-        dirStat(props.path, (err, results) => {
-            if (err) {
-                this.setState({ success: false } as State);
-            } else {
-                this.setState({
-                    success: true,
-                    dirStat: results,
-                } as State);
-            }
-        });
     }
 
     shouldComponentUpdate(nextProps: Props, nextState: State) {
@@ -62,36 +43,41 @@ class LSComponent extends React.Component<Props, State> {
     }
 
     render() {
-        if (this.state.success === false) {
-            return <div>Failed</div>;
-        } else if (this.state.success === true) {
-            return <div
-                style={{padding: "10px"}}
-                ref={element => {
-                    if (element) {
-                        const children = Array.prototype.slice.call(element.children);
-                        this.setState({
-                            itemWidth: Math.max(...children.map((child: any) => child.offsetWidth)),
-                        } as State);
-                    }
-                }}
-            >{this.state.dirStat.map((file: any) => renderFile(file, this.state.itemWidth))}</div>;
-        } else {
-            return <div>Loading...</div>;
-        }
+        return <div
+            style={{padding: "10px"}}
+            ref={element => {
+                if (element) {
+                    const children = Array.prototype.slice.call(element.children);
+                    this.setState({
+                        itemWidth: Math.max(...children.map((child: any) => child.offsetWidth)),
+                    } as State);
+                }
+            }}
+        >{this.props.files.map((file: any, index: number) => renderFile(file, this.state.itemWidth, index))}</div>;
     }
 }
 
-PluginManager.registerOutputDecorator({
-    decorate: (job: Job): React.ReactElement<any> => {
-        const match = job.prompt.value.match(/^ls(?:\s+([/\w]*))\s*$/);
-        const inputDir = match ? match[1] : ".";
-        const dir = isAbsolute(inputDir) ? inputDir : join(job.environment.pwd, inputDir);
-        return <LSComponent path={dir} />;
+PluginManager.registerCommandInterceptorPlugin({
+    intercept: async({
+        command,
+        presentWorkingDirectory,
+    }): Promise<React.ReactElement<any>> => {
+        const inputDir = command[1] || ".";
+        const dir = isAbsolute(inputDir) ? inputDir : join(presentWorkingDirectory, inputDir);
+        const files: any[] = await new Promise<any[]>((resolve, reject) => {
+            dirStat(dir, (err, results) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+        return <LSComponent files={files} />;
     },
 
-    isApplicable: (job: Job): boolean => {
-        // Matches ls page with an optional single arg
-        return /^ls(\s+[/\w]*)?\s*$/.test(job.prompt.value);
+    isApplicable: ({ command }): boolean => {
+        const hasFlags = command.length === 2 && command[1].startsWith("-");
+        return [1, 2].includes(command.length) && !hasFlags && command[0] === "ls";
     },
 });

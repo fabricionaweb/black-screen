@@ -260,26 +260,46 @@ export function mk(provider: AutocompletionProvider) {
 
 export const emptyProvider = mk(async() => []);
 
+
+
 function gitStatusCodeColor(statusCode: StatusCode) {
     switch (statusCode) {
-        case StatusCode.Added:
+        case "StagedModified":
+        case "StagedAdded":
+        case "StagedDeleted":
+        case "StagedRenamed":
+        case "StagedCopied":
             return colors.green;
-        case StatusCode.Copied:
+
+        case "StagedCopiedUnstagedModified":
+        case "StagedCopiedUnstagedDeleted":
+        case "StagedRenamedUnstagedModified":
+        case "StagedRenamedUnstagedDeleted":
+        case "StagedDeletedUnstagedModified":
+        case "StagedAddedUnstagedModified":
+        case "StagedAddedUnstagedDeleted":
+        case "StagedModifiedUnstagedModified":
+        case "StagedModifiedUnstagedDeleted":
             return colors.blue;
-        case StatusCode.Deleted:
+
+        case "UnstagedDeleted":
+        case "UnmergedBothDeleted":
+        case "UnmergedAddedByUs":
+        case "UnmergedDeletedByThem":
+        case "UnmergedAddedByThem":
+        case "UnmergedDeletedByUs":
+        case "UnmergedBothAdded":
+        case "UnmergedBothModified":
+        case "Untracked":
+        case "Ignored":
+        case "Invalid":
             return colors.red;
-        case StatusCode.Modified:
-            return colors.blue;
-        case StatusCode.Renamed:
-            return colors.blue;
-        case StatusCode.Unmodified:
+
+        case "Unmodified":
             return colors.white;
-        case StatusCode.Untracked:
-            return colors.red;
-        case StatusCode.UpdatedButUnmerged:
-            return colors.blue;
         default:
-            throw "Should never happen.";
+            console.error(`Unhandled git status code: ${statusCode}`);
+            return colors.white;
     }
 }
 

@@ -1,5 +1,5 @@
 import {handleUserEvent, UserEvent} from "./UserEventsHander";
-process.env.NODE_ENV = "production";
+process.env.NODE_ENV = process.env.NODE_ENV || "production";
 process.env.LANG = process.env.LANG || "en_US.UTF-8";
 
 import {loadAliasesFromConfig} from "../shell/Aliases";
@@ -36,7 +36,16 @@ document.addEventListener(
             .then(() => {
                 const application: ApplicationComponent = reactDOM.render(<ApplicationComponent/>, document.body);
 
-                const userEventHandler = (event: UserEvent) => handleUserEvent(application, window.focusedTab, window.focusedSession, window.focusedJob, window.focusedPrompt, window.search)(event);
+                const userEventHandler = (event: UserEvent) => {
+                    handleUserEvent(
+                        application,
+                        window.focusedTab,
+                        window.focusedSession,
+                        window.focusedJob,
+                        window.focusedPrompt,
+                        window.search
+                    )(event);
+                };
 
                 document.body.addEventListener("keydown", userEventHandler, true);
                 document.body.addEventListener("paste", userEventHandler, true);

@@ -19,7 +19,9 @@ import {assign} from "../utils/Common";
 interface Props {
     job: Job;
     status: e.Status;
-    decorateToggler: () => boolean;
+    decorateToggler: () => void;
+    isDecorated: boolean;
+    showDecorationToggle: boolean;
     isFocused: boolean;
 }
 
@@ -119,8 +121,11 @@ export class PromptComponent extends React.Component<Props, State> {
             }
         }
 
-        if (this.props.job.canBeDecorated()) {
-            decorationToggle = <DecorationToggleComponent decorateToggler={this.props.decorateToggler}/>;
+        if (this.props.showDecorationToggle) {
+            decorationToggle = <DecorationToggleComponent
+                decorateToggler={this.props.decorateToggler}
+                isDecorated={this.props.isDecorated}
+            />;
         }
 
         if (this.state.isSticky) {
@@ -130,33 +135,35 @@ export class PromptComponent extends React.Component<Props, State> {
                                 dangerouslySetInnerHTML={{__html: fontAwesome.longArrowUp}}/>;
         }
 
-        return (
-            <div className="prompt-placeholder" ref="placeholder" id={this.props.job.id.toString()} style={css.promptPlaceholder}>
-                <div className="prompt-wrapper" style={css.promptWrapper(this.props.status, this.state.isSticky)}>
-                    <div style={css.arrow(this.props.status)}>
-                        <div style={css.arrowInner(this.props.status)}></div>
-                    </div>
-                    <div style={css.promptInfo(this.props.status)}
-                         title={JSON.stringify(this.props.status)}
-                         dangerouslySetInnerHTML={{__html: this.props.status === Status.Interrupted ? fontAwesome.close : ""}}></div>
-                    <div className="prompt"
-                         style={css.prompt(this.state.isSticky)}
-                         onInput={this.handleInput.bind(this)}
-                         onDrop={this.handleDrop.bind(this)}
-                         onBlur={() => this.setState(assign(this.state, {caretPositionFromPreviousFocus: getCaretPosition(this.commandNode)}))}
-                         onFocus={() => setCaretPosition(this.commandNode, this.state.caretPositionFromPreviousFocus)}
-                         type="text"
-                         ref="command"
-                         contentEditable={this.props.status === e.Status.NotStarted}></div>
-                    {autocompletedPreview}
-                    {autocomplete}
-                    <div style={css.actions}>
-                        {decorationToggle}
-                        {scrollToTop}
-                    </div>
+        return <div ref="placeholder" id={this.props.job.id.toString()} style={css.promptPlaceholder}>
+            <div style={css.promptWrapper(this.props.status, this.state.isSticky)}>
+                <div style={css.arrow(this.props.status)}>
+                    <div style={css.arrowInner(this.props.status)} />
+                </div>
+                <div
+                    style={css.promptInfo(this.props.status)}
+                    title={JSON.stringify(this.props.status)}
+                    dangerouslySetInnerHTML={{__html: this.props.status === Status.Interrupted ? fontAwesome.close : ""}}
+                />
+                <div
+                    className="prompt" // Used by tests
+                    style={css.prompt(this.state.isSticky)}
+                    onInput={this.handleInput.bind(this)}
+                    onDrop={this.handleDrop.bind(this)}
+                    onBlur={() => this.setState(assign(this.state, {caretPositionFromPreviousFocus: getCaretPosition(this.commandNode)}))}
+                    onFocus={() => setCaretPosition(this.commandNode, this.state.caretPositionFromPreviousFocus)}
+                    type="text"
+                    ref="command"
+                    contentEditable={this.props.status === e.Status.NotStarted}
+                />
+                {autocompletedPreview}
+                {autocomplete}
+                <div style={css.actions}>
+                    {decorationToggle}
+                    {scrollToTop}
                 </div>
             </div>
-        );
+        </div>;
     }
 
     focus(): void {
@@ -236,6 +243,10 @@ export class PromptComponent extends React.Component<Props, State> {
         await this.getSuggestions();
     }
 
+    appendText(text: string): void {
+        this.setText(this.prompt.value.concat(text));
+    }
+
     private setText(text: string): void {
         this.prompt.setValue(text);
         this.setDOMValueProgrammatically(text);
@@ -287,7 +298,7 @@ export class PromptComponent extends React.Component<Props, State> {
         ];
 
         return this.props.isFocused &&
-            this.state.suggestions.length &&
+            this.state.suggestions.length > 0 &&
             this.commandNode && !this.isEmpty() &&
             this.props.status === e.Status.NotStarted && !ignoredKeyCodes.includes(this.state.previousKeyCode);
     }

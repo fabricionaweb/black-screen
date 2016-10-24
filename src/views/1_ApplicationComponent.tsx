@@ -18,7 +18,7 @@ export class ApplicationComponent extends React.Component<{}, {}> {
         super(props);
         const electronWindow = remote.BrowserWindow.getAllWindows()[0];
 
-        this.addTab();
+        this.addTab(false);
 
         electronWindow
             .on("move", () => saveWindowBounds(electronWindow))
@@ -48,11 +48,11 @@ export class ApplicationComponent extends React.Component<{}, {}> {
         window.application = this;
     }
 
-    addTab(): void {
+    addTab(forceUpdate = true): void {
         if (this.tabs.length < 9) {
             this.tabs.push(new Tab(this));
             this.focusedTabIndex = this.tabs.length - 1;
-            this.forceUpdate();
+            if (forceUpdate) this.forceUpdate();
         } else {
             remote.shell.beep();
         }
@@ -71,6 +71,32 @@ export class ApplicationComponent extends React.Component<{}, {}> {
         }
 
         window.focusedTab = this.focusedTab;
+    }
+
+    closeFocusedTab() {
+        this.closeTab(this.focusedTab);
+
+        this.forceUpdate();
+    }
+
+    activatePreviousTab() {
+        let newPosition = this.focusedTabIndex - 1;
+
+        if (newPosition < 0) {
+            newPosition = this.tabs.length - 1;
+        }
+
+        this.focusTab(newPosition + 1);
+    }
+
+    activateNextTab() {
+        let newPosition = this.focusedTabIndex + 1;
+
+        if (newPosition >= this.tabs.length) {
+            newPosition = 0;
+        }
+
+        this.focusTab(newPosition + 1);
     }
 
     // FIXME: this method should be private.
